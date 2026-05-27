@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>毎日あんしん — タスク管理</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      background: #f0f4ff;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #7b9fff, #a78bfa);
+      color: white;
+      padding: 24px 20px 20px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.05em; }
+    header p  { font-size: 0.85rem; margin-top: 4px; opacity: 0.88; }
+
+    .progress-wrap {
+      background: rgba(255,255,255,0.25);
+      border-radius: 20px;
+      height: 12px;
+      margin: 14px auto 0;
+      max-width: 320px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: white;
+      border-radius: 20px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-size: 0.78rem;
+      margin-top: 6px;
+      opacity: 0.9;
+    }
+
+    .container { max-width: 560px; margin: 0 auto; padding: 20px 16px 60px; }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: #555; }
+
+    .form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+
+    input[type="text"] {
+      flex: 1 1 200px;
+      padding: 10px 14px;
+      border: 2px solid #e0e7ff;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input[type="text"]:focus { border-color: #7b9fff; }
+
+    select {
+      padding: 10px 12px;
+      border: 2px solid #e0e7ff;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      background: white;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="date"] {
+      padding: 10px 12px;
+      border: 2px solid #e0e7ff;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    button.add-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7b9fff, #a78bfa);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button.add-btn:hover { opacity: 0.88; }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #888;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .task-list { list-style: none; }
+
+    .task-item {
+      background: white;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: opacity 0.3s, transform 0.2s;
+      border-left: 5px solid #ccc;
+    }
+    .task-item.done {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+    .task-item.prio-high  { border-left-color: #f87171; }
+    .task-item.prio-mid   { border-left-color: #fbbf24; }
+    .task-item.prio-low   { border-left-color: #6ee7b7; }
+
+    .task-check {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid #c4c4c4;
+      background: white;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, border 0.2s;
+    }
+    .task-check.checked { background: #7b9fff; border-color: #7b9fff; }
+    .task-check.checked::after { content: '✓'; color: white; font-size: 13px; font-weight: 700; }
+
+    .task-body { flex: 1; }
+    .task-name { font-size: 0.95rem; font-weight: 600; }
+    .task-meta { font-size: 0.75rem; color: #aaa; margin-top: 3px; }
+
+    .prio-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+    .prio-high  .prio-badge { background: #fef2f2; color: #ef4444; }
+    .prio-mid   .prio-badge { background: #fffbeb; color: #d97706; }
+    .prio-low   .prio-badge { background: #ecfdf5; color: #059669; }
+
+    .delete-btn {
+      background: none; border: none; color: #ccc;
+      cursor: pointer; font-size: 1.1rem; flex-shrink: 0;
+      transition: color 0.2s;
+    }
+    .delete-btn:hover { color: #f87171; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #7b9fff;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(123,159,255,0.4);
+      display: none;
+      z-index: 999;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity:1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #bbb;
+      font-size: 0.88rem;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌱 毎日あんしん</h1>
+  <p>日々の不安を減らして、一歩ずつ進もう</p>
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+  <p class="progress-label" id="progressLabel">タスクを追加してみよう</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>＋ タスクを追加する</h2>
+    <div class="form-row">
+      <input type="text" id="taskInput" placeholder="今日やること…" />
+      <select id="prioritySelect">
+        <option value="high">🔴 高</option>
+        <option value="mid" selected>🟡 中</option>
+        <option value="low">🟢 低</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <input type="date" id="dateInput" style="flex:1" />
+    </div>
+    <button class="add-btn" onclick="addTask()">追加する</button>
+  </div>
+
+  <p class="section-title">今日のタスク</p>
+  <ul class="task-list" id="taskList"></ul>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dateInput').value = today;
+
+  let tasks = [];
+  const PRIO_LABEL = { high: '高', mid: '中', low: '低' };
+
+  function addTask() {
+    const name = document.getElementById('taskInput').value.trim();
+    if (!name) { showToast('タスク名を入力してね！'); return; }
+    const prio = document.getElementById('prioritySelect').value;
+    const date = document.getElementById('dateInput').value;
+    tasks.push({ id: Date.now(), name, prio, date, done: false });
+    document.getElementById('taskInput').value = '';
+    renderTasks();
+    showToast('追加しました ✨');
+  }
+
+  function toggleTask(id) {
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    t.done = !t.done;
+    renderTasks();
+    if (t.done) showToast('やったね！ひとつ完了！🎉');
+  }
+
+  function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    renderTasks();
+  }
+
+  function renderTasks() {
+    const list = document.getElementById('taskList');
+    list.innerHTML = '';
+    if (tasks.length === 0) {
+      list.innerHTML = '<li class="empty-msg">タスクがまだありません。<br>上から追加してみよう！</li>';
+      updateProgress(0, 0);
+      return;
+    }
+    const order = { high: 0, mid: 1, low: 2 };
+    const sorted = [...tasks].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return order[a.prio] - order[b.prio];
+    });
+    sorted.forEach(t => {
+      const li = document.createElement('li');
+      li.className = `task-item prio-${t.prio} ${t.done ? 'done' : ''}`;
+      li.innerHTML = `
+        <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask(${t.id})"></div>
+        <div class="task-body">
+          <div class="task-name">${escapeHtml(t.name)}</div>
+          <div class="task-meta">${t.date ? '📅 ' + t.date : ''}</div>
+        </div>
+        <span class="prio-badge">${PRIO_LABEL[t.prio]}</span>
+        <button class="delete-btn" onclick="deleteTask(${t.id})">✕</button>
+      `;
+      list.appendChild(li);
+    });
+    const done = tasks.filter(t => t.done).length;
+    updateProgress(done, tasks.length);
+  }
+
+  function updateProgress(done, total) {
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    const label = document.getElementById('progressLabel');
+    if (total === 0) label.textContent = 'タスクを追加してみよう';
+    else if (pct === 100) label.textContent = '🎉 全部完了！すごい！';
+    else label.textContent = `${done} / ${total} 完了（${pct}%）`;
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 2200);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('taskInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  renderTasks();
+</script>
+</body>
+</html>
