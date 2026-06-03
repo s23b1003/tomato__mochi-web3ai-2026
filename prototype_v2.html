@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>毎日あんしん v2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      background: #f0f4ff;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ---- ヘッダー ---- */
+    header {
+      background: linear-gradient(135deg, #7b9fff, #a78bfa);
+      color: white;
+      padding: 24px 20px 16px;
+      text-align: center;
+      position: relative;
+      overflow: visible;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: 0.05em; }
+    header .subtitle { font-size: 0.85rem; margin-top: 4px; opacity: 0.88; }
+
+    .progress-wrap {
+      background: rgba(255,255,255,0.25);
+      border-radius: 20px;
+      height: 12px;
+      margin: 14px auto 0;
+      max-width: 320px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: white;
+      border-radius: 20px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-size: 0.78rem;
+      margin-top: 6px;
+      opacity: 0.9;
+      min-height: 1.2em;
+    }
+
+    /* ---- 猫 ---- */
+    .cat {
+      position: absolute;
+      bottom: -20px;
+      z-index: 10;
+      pointer-events: none;
+      animation: catWalk 32s linear infinite;
+    }
+
+    @keyframes catWalk {
+      0%   { left: -120px;            transform: scaleX(1); }
+      49%  { left: calc(100% + 20px); transform: scaleX(1); }
+      50%  { left: calc(100% + 20px); transform: scaleX(-1); }
+      99%  { left: -120px;            transform: scaleX(-1); }
+      100% { left: -120px;            transform: scaleX(1); }
+    }
+
+    .cat-svg {
+      animation: catBob 0.42s ease-in-out infinite;
+      display: block;
+    }
+
+    @keyframes catBob {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-3px); }
+    }
+
+    /* しっぽ（回転の基点＝しっぽの付け根） */
+    .cat-tail-g {
+      transform-box: fill-box;
+      transform-origin: 100% 100%;
+      animation: tailWag 1.1s ease-in-out infinite;
+    }
+    @keyframes tailWag {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(16deg); }
+    }
+
+    /* 足（前後交互スイング） */
+    .leg-a {
+      transform-box: fill-box;
+      transform-origin: 50% 0%;
+      animation: legSwingA 0.42s ease-in-out infinite;
+    }
+    .leg-b {
+      transform-box: fill-box;
+      transform-origin: 50% 0%;
+      animation: legSwingB 0.42s ease-in-out infinite;
+    }
+    @keyframes legSwingA {
+      0%, 100% { transform: rotate(22deg); }
+      50%       { transform: rotate(-22deg); }
+    }
+    @keyframes legSwingB {
+      0%, 100% { transform: rotate(-22deg); }
+      50%       { transform: rotate(22deg); }
+    }
+
+    /* ---- コンテナ ---- */
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 52px 16px 60px;
+    }
+
+    /* ---- カード ---- */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: #555; }
+
+    .form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+
+    input[type="text"], select, input[type="date"] {
+      padding: 10px 12px;
+      border: 2px solid #e0e7ff;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border 0.2s;
+      background: white;
+    }
+    input[type="text"] { flex: 1 1 180px; }
+    input[type="text"]:focus,
+    select:focus,
+    input[type="date"]:focus { border-color: #7b9fff; }
+    select { cursor: pointer; }
+
+    /* 曜日選択 */
+    .day-wrap { display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .day-wrap.show { display: flex; }
+    .day-wrap label { font-size: 0.8rem; color: #888; white-space: nowrap; }
+    .day-btn {
+      padding: 6px 10px;
+      border: 2px solid #e0e7ff;
+      border-radius: 8px;
+      background: white;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .day-btn.sel { background: #7b9fff; border-color: #7b9fff; color: white; font-weight: 700; }
+
+    button.add-btn {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, #7b9fff, #a78bfa);
+      color: white; border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button.add-btn:hover { opacity: 0.88; }
+
+    /* ---- セクションタイトル ---- */
+    .section-title {
+      font-size: 0.82rem; font-weight: 700;
+      color: #888; letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px; margin-top: 4px;
+    }
+
+    /* ---- タスクリスト ---- */
+    .task-list { list-style: none; margin-bottom: 8px; }
+
+    .task-item {
+      background: white;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex; align-items: center; gap: 12px;
+      transition: opacity 0.3s;
+      border-left: 5px solid #ccc;
+    }
+    .task-item.done { opacity: 0.45; }
+    .task-item.done .task-name { text-decoration: line-through; }
+    .task-item.prio-high { border-left-color: #f87171; }
+    .task-item.prio-mid  { border-left-color: #fbbf24; }
+    .task-item.prio-low  { border-left-color: #6ee7b7; }
+
+    .task-check {
+      width: 24px; height: 24px;
+      border-radius: 50%; border: 2px solid #c4c4c4;
+      background: white; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, border 0.2s;
+    }
+    .task-check.checked { background: #7b9fff; border-color: #7b9fff; }
+    .task-check.checked::after { content: '✓'; color: white; font-size: 13px; font-weight: 700; }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-name { font-size: 0.95rem; font-weight: 600; }
+    .task-meta { font-size: 0.74rem; color: #aaa; margin-top: 3px; }
+
+    .badges { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+
+    .badge {
+      font-size: 0.68rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 20px;
+    }
+    .prio-high .badge.prio { background: #fef2f2; color: #ef4444; }
+    .prio-mid  .badge.prio { background: #fffbeb; color: #d97706; }
+    .prio-low  .badge.prio { background: #ecfdf5; color: #059669; }
+    .badge.repeat { background: #ede9fe; color: #7c3aed; }
+
+    .delete-btn {
+      background: none; border: none; color: #ccc;
+      cursor: pointer; font-size: 1.1rem; flex-shrink: 0;
+      transition: color 0.2s;
+    }
+    .delete-btn:hover { color: #f87171; }
+
+    .empty-msg {
+      text-align: center; color: #bbb;
+      font-size: 0.86rem; padding: 16px 0;
+    }
+
+    /* ---- トースト ---- */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #7b9fff; color: white;
+      padding: 12px 22px; border-radius: 30px;
+      font-size: 0.9rem; font-weight: 600;
+      box-shadow: 0 4px 20px rgba(123,159,255,0.4);
+      display: none; z-index: 999;
+      max-width: 88vw; text-align: center;
+    }
+    .toast.show {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity:1; transform: translateX(-50%) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== ヘッダー ===== -->
+<header>
+  <h1>🌱 毎日あんしん</h1>
+  <p class="subtitle">日々の不安を減らして、一歩ずつ進もう</p>
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+  <p class="progress-label" id="progressLabel">タスクを追加してみよう</p>
+
+  <!-- 猫（ふっくり横向き、右向きで歩く） -->
+  <div class="cat" id="catEl">
+    <svg class="cat-svg" viewBox="0 0 108 68" width="108" height="68" xmlns="http://www.w3.org/2000/svg">
+      <!-- しっぽ（付け根から揺れる） -->
+      <g class="cat-tail-g">
+        <path d="M20,37 Q6,22 12,7" stroke="#ffc090" stroke-width="9" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- 胴体パーツ（同色で重ねて一体化） -->
+      <ellipse cx="50" cy="39" rx="30" ry="16" fill="#ffc090"/>  <!-- 胴 -->
+      <ellipse cx="74" cy="33" rx="14" ry="13" fill="#ffc090"/>  <!-- 首 -->
+      <circle  cx="86" cy="22" r="17"           fill="#ffc090"/> <!-- 頭 -->
+      <!-- 耳（横顔で1枚見える） -->
+      <polygon points="83,9 78,0 91,8" fill="#ffc090"/>
+      <!-- 耳の内側 -->
+      <polygon points="83,9 79,2 90,8" fill="#ffaa78"/>
+      <!-- 目 -->
+      <ellipse cx="94" cy="20" rx="3.2" ry="3.8" fill="#2a1505"/>
+      <circle  cx="95.2" cy="18.6" r="1.2"       fill="white"/>
+      <!-- 鼻 -->
+      <ellipse cx="102" cy="25" rx="2"   ry="1.4" fill="#d07060"/>
+      <!-- 口 -->
+      <path d="M100,27 Q102,30 104,27" stroke="#b05040" fill="none" stroke-width="1.1" stroke-linecap="round"/>
+      <!-- ひげ -->
+      <line x1="103" y1="24" x2="108" y2="22" stroke="#e8a878" stroke-width="1.1"/>
+      <line x1="103" y1="26" x2="108" y2="26" stroke="#e8a878" stroke-width="1.1"/>
+      <!-- 前足 -->
+      <rect class="leg-a" x="64" y="51" width="11" height="17" rx="5.5" fill="#ffb080"/>
+      <rect class="leg-b" x="75" y="51" width="11" height="17" rx="5.5" fill="#ffb080"/>
+      <!-- 後ろ足 -->
+      <rect class="leg-b" x="30" y="50" width="11" height="18" rx="5.5" fill="#ffb080"/>
+      <rect class="leg-a" x="41" y="50" width="11" height="18" rx="5.5" fill="#ffb080"/>
+    </svg>
+  </div>
+</header>
+
+<!-- ===== コンテナ ===== -->
+<div class="container">
+
+  <!-- 入力フォーム -->
+  <div class="card">
+    <h2>＋ タスクを追加する</h2>
+
+    <div class="form-row">
+      <input type="text" id="taskInput" placeholder="やること…" />
+      <select id="prioritySelect">
+        <option value="high">🔴 高</option>
+        <option value="mid" selected>🟡 中</option>
+        <option value="low">🟢 低</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <select id="typeSelect" onchange="onTypeChange()">
+        <option value="once">📌 1回だけ</option>
+        <option value="weekly">🔁 毎週</option>
+        <option value="biweekly">🔄 隔週</option>
+      </select>
+      <input type="date" id="dateInput" style="flex:1" />
+    </div>
+
+    <!-- 曜日選択（毎週・隔週のとき表示） -->
+    <div class="day-wrap" id="dayWrap">
+      <label>曜日：</label>
+      <button class="day-btn" data-d="1">月</button>
+      <button class="day-btn" data-d="2">火</button>
+      <button class="day-btn" data-d="3">水</button>
+      <button class="day-btn" data-d="4">木</button>
+      <button class="day-btn" data-d="5">金</button>
+      <button class="day-btn" data-d="6">土</button>
+      <button class="day-btn" data-d="0">日</button>
+    </div>
+
+    <button class="add-btn" onclick="addTask()">追加する</button>
+  </div>
+
+  <!-- 1回タスク -->
+  <p class="section-title">📌 今日のタスク</p>
+  <ul class="task-list" id="listOnce"></ul>
+
+  <!-- 繰り返しタスク -->
+  <p class="section-title">🔁 繰り返しタスク</p>
+  <ul class="task-list" id="listRepeat"></ul>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ========== 定数 ========== */
+  const STORAGE_KEY = 'mainichi_anshin_v2';
+  const DAY_NAMES   = ['日','月','火','水','木','金','土'];
+  const PRIO_LABEL  = { high:'高', mid:'中', low:'低' };
+  const TYPE_LABEL  = { weekly:'毎週', biweekly:'隔週' };
+
+  const MSG_QUICK  = [
+    'よくできました！✨',
+    'やればできるじゃん！🎉',
+    'えらい！✊',
+    'さすが！👏',
+    'パーフェクト！🌟',
+    'いい調子！💪',
+  ];
+  const MSG_NORMAL = [
+    'やり遂げることが大事！えらい！🌱',
+    'ちゃんとできたね！💪',
+    '完璧！続けていこう！✨',
+    'よくやった！🎊',
+  ];
+  const MSG_LATE   = [
+    '時間がかかっても諦めずにできて偉い！🌱',
+    'ゆっくりでも完走！それが大事！🏃',
+    '粘り強さが光ったね！✨',
+    '時間かかっても、やり遂げることが大事！えらい！💪',
+    '諦めなかったね！それが一番大切！🌟',
+  ];
+  const MSG_ALL_DONE = [
+    '今週はよく頑張ったね！来週も頑張ろう！🌈',
+    '今日の全部完了！すごい！🎉',
+    '全タスク達成！完璧な一日！✨',
+  ];
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  /* ========== 週の開始日（月曜）を返す ========== */
+  function weekStart(ts) {
+    const d = new Date(ts);
+    const day = d.getDay(); // 0=Sun
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d.getTime();
+  }
+
+  /* ========== localStorage ========== */
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      const now = Date.now();
+      return arr.map(t => {
+        if (t.type === 'once' || !t.done) return t;
+        // 繰り返しタスクのリセット判定
+        if (t.type === 'weekly') {
+          if (weekStart(now) > weekStart(t.completedAt)) {
+            return { ...t, done: false, completedAt: null };
+          }
+        }
+        if (t.type === 'biweekly') {
+          if (now - t.completedAt >= 14 * 86400000) {
+            return { ...t, done: false, completedAt: null };
+          }
+        }
+        return t;
+      });
+    } catch(e) { return []; }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  }
+
+  /* ========== 状態 ========== */
+  let tasks = load();
+  let selectedDay = null;
+
+  // 今日の日付デフォルト
+  document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+  /* ========== 曜日ボタン ========== */
+  document.querySelectorAll('.day-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      selectedDay = parseInt(btn.dataset.d);
+    });
+  });
+
+  function onTypeChange() {
+    const type = document.getElementById('typeSelect').value;
+    document.getElementById('dayWrap').classList.toggle('show', type !== 'once');
+    document.getElementById('dateInput').style.display = type === 'once' ? '' : 'none';
+    selectedDay = null;
+    document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('sel'));
+  }
+
+  /* ========== タスク追加 ========== */
+  function addTask() {
+    const name = document.getElementById('taskInput').value.trim();
+    if (!name) { toast('タスク名を入力してね！'); return; }
+
+    const prio = document.getElementById('prioritySelect').value;
+    const type = document.getElementById('typeSelect').value;
+    const date = type === 'once' ? document.getElementById('dateInput').value : null;
+
+    if (type !== 'once' && selectedDay === null) {
+      toast('曜日を選んでね！');
+      return;
+    }
+
+    tasks.push({
+      id: Date.now(),
+      name, prio, type,
+      dayOfWeek: type !== 'once' ? selectedDay : null,
+      date,
+      done: false,
+      addedAt: Date.now(),
+      completedAt: null,
+    });
+
+    document.getElementById('taskInput').value = '';
+    save();
+    render();
+    toast('追加しました ✨');
+  }
+
+  /* ========== チェック切り替え ========== */
+  function toggle(id) {
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    t.done = !t.done;
+    if (t.done) {
+      t.completedAt = Date.now();
+
+      // 褒めメッセージ
+      const elapsed = t.completedAt - t.addedAt;
+      const h3 = 3 * 3600000;
+      const d1 = 86400000;
+      const msg = elapsed < h3 ? pick(MSG_QUICK)
+                : elapsed < d1 ? pick(MSG_NORMAL)
+                :                pick(MSG_LATE);
+      toast(msg);
+
+      // 通常タスクが全完了したら週まとめメッセージ
+      const once = tasks.filter(t => t.type === 'once');
+      if (once.length > 0 && once.every(t => t.done)) {
+        setTimeout(() => toast(pick(MSG_ALL_DONE)), 2600);
+      }
+    } else {
+      t.completedAt = null;
+    }
+    save();
+    render();
+  }
+
+  /* ========== 削除 ========== */
+  function del(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    save();
+    render();
+  }
+
+  /* ========== 描画 ========== */
+  function render() {
+    const once   = tasks.filter(t => t.type === 'once');
+    const repeat = tasks.filter(t => t.type !== 'once');
+    const order  = { high:0, mid:1, low:2 };
+    const sort   = arr => [...arr].sort((a,b) =>
+      a.done !== b.done ? (a.done ? 1 : -1) : order[a.prio] - order[b.prio]
+    );
+
+    renderList('listOnce',   sort(once),   '通常タスクがまだありません');
+    renderList('listRepeat', sort(repeat), '繰り返しタスクがまだありません');
+
+    const done  = once.filter(t => t.done).length;
+    updateProgress(done, once.length);
+  }
+
+  function renderList(id, arr, emptyMsg) {
+    const ul = document.getElementById(id);
+    ul.innerHTML = '';
+    if (arr.length === 0) {
+      ul.innerHTML = `<li class="empty-msg">${emptyMsg}</li>`;
+      return;
+    }
+    arr.forEach(t => ul.appendChild(makeItem(t)));
+  }
+
+  function makeItem(t) {
+    const li = document.createElement('li');
+    li.className = `task-item prio-${t.prio} ${t.done ? 'done' : ''}`;
+
+    let meta = '';
+    if (t.type === 'once'     && t.date) meta = `📅 ${t.date}`;
+    if (t.type === 'weekly')             meta = `🔁 毎週${DAY_NAMES[t.dayOfWeek]}曜日`;
+    if (t.type === 'biweekly')           meta = `🔄 隔週${DAY_NAMES[t.dayOfWeek]}曜日`;
+
+    const repeatBadge = t.type !== 'once'
+      ? `<span class="badge repeat">${TYPE_LABEL[t.type]}</span>` : '';
+
+    li.innerHTML = `
+      <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggle(${t.id})"></div>
+      <div class="task-body">
+        <div class="task-name">${esc(t.name)}</div>
+        <div class="task-meta">${meta}</div>
+      </div>
+      <div class="badges">
+        ${repeatBadge}
+        <span class="badge prio">${PRIO_LABEL[t.prio]}</span>
+      </div>
+      <button class="delete-btn" onclick="del(${t.id})">✕</button>
+    `;
+    return li;
+  }
+
+  function updateProgress(done, total) {
+    const pct = total === 0 ? 0 : Math.round(done / total * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    const lbl = document.getElementById('progressLabel');
+    if      (total === 0)   lbl.textContent = 'タスクを追加してみよう';
+    else if (pct === 100)   lbl.textContent = '🎉 全部完了！すごい！';
+    else                    lbl.textContent = `${done} / ${total} 完了（${pct}%）`;
+  }
+
+  /* ========== トースト ========== */
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.remove('show');
+    void el.offsetWidth; // reflow
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ========== Enter でも追加 ========== */
+  document.getElementById('taskInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  render();
+</script>
+</body>
+</html>
