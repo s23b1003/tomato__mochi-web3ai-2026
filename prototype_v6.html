@@ -1092,7 +1092,7 @@ async function askAI(){
   bub.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
   try{
     let result='',lastErr='';
-    const maxTok=question?300:150;
+    const maxTok=question?600:200;
     for(const m of['gemini-3.5-flash','gemini-2.5-flash']){
       try{
         const res=await fetch(WORKER_URL,{
