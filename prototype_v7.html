@@ -1153,7 +1153,7 @@ async function checkAIConnection(){
     });
     const data=await res.json();
     if(res.ok&&!data.error&&data.candidates){
-      lbl.textContent='🟢 Gemini AI 接続済み';lbl.style.color='#059669';
+      lbl.textContent='🟢 OpenAI 接続済み';lbl.style.color='#059669';
     }else{
       lbl.textContent='🔴 AI未接続（APIキー確認）';lbl.style.color='#e53e3e';
     }
